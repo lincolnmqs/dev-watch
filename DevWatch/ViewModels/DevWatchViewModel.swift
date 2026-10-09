@@ -291,6 +291,13 @@ final class DevWatchViewModel: ObservableObject {
 
         if finished.state == .succeeded || finished.state == .finished {
             finished.artifactPath = BuildScanner.findArtifact(for: finished)
+            if finished.distribution == nil, let artifact = finished.artifactPath {
+                switch (artifact as NSString).pathExtension {
+                case "apk": finished.distribution = .apk
+                case "aab": finished.distribution = .playStore
+                default: break
+                }
+            }
             buildHistory.record(finished)
         }
 
@@ -302,11 +309,12 @@ final class DevWatchViewModel: ObservableObject {
 
     private func notifyBuildFinished(_ job: BuildJob) {
         let duration = DurationFormatter.short(job.elapsed())
+        let kind = [job.platform.rawValue, job.distribution?.rawValue].compactMap { $0 }.joined(separator: " · ")
         let title: String
         switch job.state {
-        case .succeeded, .finished: title = "\(job.platform.rawValue) build finished"
-        case .failed: title = "\(job.platform.rawValue) build failed"
-        case .cancelled: title = "\(job.platform.rawValue) build cancelled"
+        case .succeeded, .finished: title = "\(kind) build finished"
+        case .failed: title = "\(kind) build failed"
+        case .cancelled: title = "\(kind) build cancelled"
         case .running: return
         }
 

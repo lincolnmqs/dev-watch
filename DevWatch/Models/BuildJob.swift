@@ -16,6 +16,16 @@ struct BuildJob: Identifiable, Hashable {
         case other = "Build"
     }
 
+    /// Where the build output is headed, when the command line makes it clear.
+    enum Distribution: String {
+        case apk = "APK"
+        case playStore = "Play Store"
+        case appStore = "App Store"
+        case adHoc = "Ad Hoc"
+        case enterprise = "Enterprise"
+        case development = "Dev"
+    }
+
     enum State: String {
         case running
         case succeeded
@@ -41,6 +51,7 @@ struct BuildJob: Identifiable, Hashable {
     var state: State
     var stopPID: Int?
     var artifactPath: String?
+    var distribution: Distribution?
 
     /// One build per project and platform: this keeps the row stable while a build is
     /// first seen as a bare process and later picks up a progress file.

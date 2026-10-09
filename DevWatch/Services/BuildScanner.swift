@@ -90,6 +90,8 @@ final class BuildScanner {
         if let wrapper, file != nil {
             job.taskSummary = wrapper.job.taskSummary
         }
+        // The wrapper knows the user's intent (flutter build appbundle, eas build --profile …).
+        job.distribution = wrapper?.job.distribution ?? job.distribution ?? leaf?.job.distribution
         job.stopPID = job.state.isFinished ? nil : (wrapper?.job.stopPID ?? leaf?.job.stopPID)
         return job
     }
@@ -140,7 +142,8 @@ final class BuildScanner {
                 currentTask: file.currentTask.isEmpty ? nil : file.currentTask,
                 state: state,
                 stopPID: nil,
-                artifactPath: nil
+                artifactPath: nil,
+                distribution: Self.gradleDistribution(tasks: file.tasks)
             )
             return Candidate(job: job, role: .leaf, updatedAt: updatedAt, fromProgressFile: true)
         }
@@ -197,7 +200,7 @@ final class BuildScanner {
         guard let executable = args.first, let cwd = metadata.workingDirectory else { return nil }
         let startedAt = metadata.startTime ?? Date()
 
-        func make(tool: BuildJob.Tool, platform: BuildJob.Platform, directory: String, task: String, role: Role, artifact: String? = nil) -> Candidate {
+        func make(tool: BuildJob.Tool, platform: BuildJob.Platform, directory: String, task: String, role: Role, artifact: String? = nil, distribution: BuildJob.Distribution? = nil) -> Candidate {
             let root = Self.projectRoot(for: directory)
             let job = BuildJob(
                 tool: tool,
@@ -213,7 +216,8 @@ final class BuildScanner {
                 currentTask: nil,
                 state: .running,
                 stopPID: pid,
-                artifactPath: artifact
+                artifactPath: artifact,
+                distribution: distribution
             )
             return Candidate(job: job, role: role, updatedAt: startedAt, fromProgressFile: false)
         }
@@ -232,13 +236,31 @@ final class BuildScanner {
                 platform: Self.gradlePlatform(tasks: tasks, rootDirectory: rootDirectory),
                 directory: rootDirectory,
                 task: Self.shortGradleTasks(tasks),
-                role: .leaf
+                role: .leaf,
+                distribution: Self.gradleDistribution(tasks: tasks)
             )
         }
 
         if (executable as NSString).lastPathComponent == "xcodebuild" {
             let informational = ["-list", "-version", "-showBuildSettings", "-showsdks", "-showdestinations", "-resolvePackageDependencies", "-checkFirstLaunchStatus", "-runFirstLaunch"]
             guard !args.contains(where: informational.contains) else { return nil }
+
+            if args.contains("-exportArchive") {
+                let archivePath = Self.value(after: ["-archivePath"], in: args).map { Self.resolve($0, relativeTo: cwd) }
+                let exportPath = Self.value(after: ["-exportPath"], in: args).map { Self.resolve($0, relativeTo: cwd) }
+                let method = Self.value(after: ["-exportOptionsPlist"], in: args)
+                    .flatMap { Self.exportMethod(plistPath: Self.resolve($0, relativeTo: cwd)) }
+                let archiveName = archivePath.map { (($0 as NSString).lastPathComponent as NSString).deletingPathExtension }
+                return make(
+                    tool: .xcodebuild,
+                    platform: .ios,
+                    directory: archivePath.map { ($0 as NSString).deletingLastPathComponent } ?? cwd,
+                    task: ["export", archiveName].compactMap { $0 }.joined(separator: " "),
+                    role: .leaf,
+                    artifact: exportPath,
+                    distribution: method.flatMap(Self.appleDistribution(method:))
+                )
+            }
 
             let actions = ["archive", "build", "test", "build-for-testing", "analyze", "clean", "install"]
             let action = args.dropFirst().first(where: actions.contains) ?? "build"
@@ -257,7 +279,8 @@ final class BuildScanner {
                 directory: directory,
                 task: [action, scheme].compactMap { $0 }.joined(separator: " "),
                 role: .leaf,
-                artifact: archive
+                artifact: archive,
+                distribution: ["build", "install"].contains(action) && platform == .ios ? .development : nil
             )
         }
 
@@ -271,13 +294,31 @@ final class BuildScanner {
             case "macos", "linux", "windows": platform = .desktop
             default: platform = .other
             }
-            return make(tool: .flutter, platform: platform, directory: cwd, task: "build \(target)", role: .wrapper)
+            let distribution: BuildJob.Distribution?
+            switch target {
+            case "apk": distribution = .apk
+            case "appbundle": distribution = .playStore
+            case "ipa":
+                let method = Self.value(after: ["--export-method"], in: args)
+                    ?? Self.value(after: ["--export-options-plist"], in: args).flatMap { Self.exportMethod(plistPath: Self.resolve($0, relativeTo: cwd)) }
+                distribution = method.flatMap(Self.appleDistribution(method:)) ?? .appStore
+            default: distribution = nil
+            }
+            return make(tool: .flutter, platform: platform, directory: cwd, task: "build \(target)", role: .wrapper, distribution: distribution)
         }
 
         if args.contains(where: { ($0 as NSString).lastPathComponent == "eas" }), args.contains("build"), args.contains("--local") {
             let target = Self.value(after: ["--platform", "-p"], in: args) ?? ""
             let platform: BuildJob.Platform = target == "android" ? .android : (target == "ios" ? .ios : .other)
-            return make(tool: .eas, platform: platform, directory: cwd, task: "eas build \(target)", role: .wrapper)
+            let profile = Self.value(after: ["--profile", "-e"], in: args) ?? "production"
+            return make(
+                tool: .eas,
+                platform: platform,
+                directory: cwd,
+                task: "eas build \(target) \(profile)",
+                role: .wrapper,
+                distribution: Self.easDistribution(profile: profile, platform: platform, directory: cwd)
+            )
         }
 
         return nil
@@ -291,7 +332,14 @@ final class BuildScanner {
         let notBefore = job.startedAt.addingTimeInterval(-5)
 
         if let path = job.artifactPath {
-            return fileManager.fileExists(atPath: path) ? path : nil
+            var isDirectory: ObjCBool = false
+            guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory) else { return nil }
+            // `xcodebuild -exportArchive` gets an output folder; point at the IPA inside it.
+            if isDirectory.boolValue, !path.hasSuffix(".xcarchive"),
+               let ipa = (try? fileManager.contentsOfDirectory(atPath: path))?.first(where: { $0.hasSuffix(".ipa") }) {
+                return (path as NSString).appendingPathComponent(ipa)
+            }
+            return path
         }
 
         var outputDirectories: [URL] = []
@@ -387,6 +435,78 @@ final class BuildScanner {
         return FileManager.default.fileExists(atPath: manifest.path) ? .android : .other
     }
 
+    /// `bundleRelease` builds an AAB for Google Play, `assemble*` an APK, `install*` deploys to a device.
+    private static func gradleDistribution(tasks: String) -> BuildJob.Distribution? {
+        let names = tasks.split(separator: " ").map { ($0.split(separator: ":").last.map(String.init) ?? String($0)).lowercased() }
+        if names.contains(where: { $0.hasPrefix("bundle") }) { return .playStore }
+        if names.contains(where: { $0.hasPrefix("install") }) { return .development }
+        if names.contains(where: { $0.hasPrefix("assemble") }) { return .apk }
+        return nil
+    }
+
+    private static func appleDistribution(method: String) -> BuildJob.Distribution? {
+        switch method.lowercased() {
+        case "app-store", "app-store-connect", "validation": return .appStore
+        case "ad-hoc", "release-testing": return .adHoc
+        case "enterprise": return .enterprise
+        case "development", "debugging": return .development
+        default: return nil
+        }
+    }
+
+    private static func exportMethod(plistPath: String) -> String? {
+        guard let data = FileManager.default.contents(atPath: plistPath),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else { return nil }
+        return plist["method"] as? String
+    }
+
+    /// Reads the build profile from eas.json, following `extends`.
+    private static func easDistribution(profile: String, platform: BuildJob.Platform, directory: String) -> BuildJob.Distribution? {
+        let url = URL(fileURLWithPath: directory).appendingPathComponent("eas.json")
+        guard let data = try? Data(contentsOf: url),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let profiles = json["build"] as? [String: [String: Any]] else { return nil }
+
+        // Parent first so the requested profile overrides what it extends.
+        var chain: [[String: Any]] = []
+        var name: String? = profile
+        while let current = name, let entry = profiles[current], chain.count < 10 {
+            chain.insert(entry, at: 0)
+            name = entry["extends"] as? String
+        }
+        guard !chain.isEmpty else { return nil }
+
+        var settings: [String: Any] = [:]
+        for entry in chain {
+            for (key, value) in entry {
+                if let nested = value as? [String: Any], let existing = settings[key] as? [String: Any] {
+                    settings[key] = existing.merging(nested) { $1 }
+                } else {
+                    settings[key] = value
+                }
+            }
+        }
+
+        if settings["developmentClient"] as? Bool == true { return .development }
+        let isInternal = (settings["distribution"] as? String) == "internal"
+
+        switch platform {
+        case .android:
+            let android = settings["android"] as? [String: Any] ?? [:]
+            if let gradleCommand = android["gradleCommand"] as? String {
+                return gradleDistribution(tasks: gradleCommand) ?? .apk
+            }
+            return (android["buildType"] as? String) == "apk" ? .apk : .playStore
+        case .ios:
+            let ios = settings["ios"] as? [String: Any] ?? [:]
+            if ios["simulator"] as? Bool == true { return .development }
+            if ios["enterpriseProvisioning"] as? String == "universal" { return .enterprise }
+            return isInternal ? .adHoc : .appStore
+        default:
+            return nil
+        }
+    }
+
     private static func gradleTasks(from args: [String]) -> String {
         let optionsWithValue: Set<String> = ["-p", "--project-dir", "-x", "--exclude-task", "-c", "--settings-file", "-I", "--init-script", "-g", "--gradle-user-home", "--console", "--max-workers", "--priority", "--warning-mode"]
         var tasks: [String] = []
@@ -408,8 +528,15 @@ final class BuildScanner {
     }
 
     private static func value(after flags: [String], in args: [String]) -> String? {
-        guard let index = args.firstIndex(where: flags.contains), index + 1 < args.count else { return nil }
-        return args[index + 1]
+        if let index = args.firstIndex(where: flags.contains), index + 1 < args.count {
+            return args[index + 1]
+        }
+        for flag in flags where flag.hasPrefix("--") {
+            if let arg = args.first(where: { $0.hasPrefix(flag + "=") }) {
+                return String(arg.dropFirst(flag.count + 1))
+            }
+        }
+        return nil
     }
 
     private static func resolve(_ path: String, relativeTo base: String) -> String {

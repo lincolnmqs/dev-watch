@@ -44,6 +44,11 @@ struct BuildRowView: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Capsule().fill(accent.opacity(0.14)))
+                    .fixedSize()
+
+                    if let distribution = job.distribution {
+                        distributionBadge(distribution)
+                    }
 
                     Spacer(minLength: 4)
 
@@ -101,6 +106,43 @@ struct BuildRowView: View {
         if job.state.isFinished {
             Divider()
             Button("Dismiss", action: dismissAction)
+        }
+    }
+
+    private func distributionBadge(_ distribution: BuildJob.Distribution) -> some View {
+        let isStore = distribution == .playStore || distribution == .appStore
+        return HStack(spacing: 4) {
+            Image(systemName: distributionSymbol(distribution))
+                .font(.system(size: 8, weight: .bold))
+            Text(distribution.rawValue)
+        }
+        .font(.system(size: 9, weight: .bold, design: .monospaced))
+        .foregroundStyle(isStore ? Color.yellow.opacity(0.9) : Color.white.opacity(0.6))
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Capsule().fill(isStore ? Color.yellow.opacity(0.12) : Color.white.opacity(0.08)))
+        .fixedSize()
+        .help(distributionHelp(distribution))
+    }
+
+    private func distributionSymbol(_ distribution: BuildJob.Distribution) -> String {
+        switch distribution {
+        case .apk: return "doc.zipper"
+        case .playStore, .appStore: return "bag.fill"
+        case .adHoc: return "person.2.fill"
+        case .enterprise: return "building.2.fill"
+        case .development: return "wrench.and.screwdriver.fill"
+        }
+    }
+
+    private func distributionHelp(_ distribution: BuildJob.Distribution) -> String {
+        switch distribution {
+        case .apk: return "Installable APK"
+        case .playStore: return "App bundle (AAB) for Google Play"
+        case .appStore: return "App Store / TestFlight build"
+        case .adHoc: return "Ad hoc / internal distribution"
+        case .enterprise: return "Enterprise distribution"
+        case .development: return "Development build"
         }
     }
 
