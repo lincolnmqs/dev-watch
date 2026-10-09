@@ -1,14 +1,14 @@
-# PortWatch - Installation Guide
+# DevWatch - Installation Guide
 
 ## Quick Install
 
 ### Option 1: Using the DMG File (Easiest)
 
-1. Download `PortWatch-1.0.dmg` from the releases
+1. Download `DevWatch-1.0.dmg` from the releases
 2. Double-click to mount the DMG
-3. Drag **PortWatch.app** to the **Applications** folder
+3. Drag **DevWatch.app** to the **Applications** folder
 4. Eject the DMG
-5. Open **Applications** and double-click **PortWatch** to run
+5. Open **Applications** and double-click **DevWatch** to run
 
 ### Option 2: Build from Source
 
@@ -22,8 +22,8 @@
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/port-watch.git
-   cd port-watch
+   git clone https://github.com/yourusername/dev-watch.git
+   cd dev-watch
    ```
 
 2. **Build the application:**
@@ -32,7 +32,7 @@
    ./build-app.sh
    ```
    
-   The compiled app will be at: `build/Build/Products/Release/PortWatch.app`
+   The compiled app will be at: `build/Build/Products/Release/DevWatch.app`
 
 3. **Create a DMG (optional):**
    ```bash
@@ -40,21 +40,21 @@
    ./create-dmg.sh
    ```
    
-   This creates `PortWatch-1.0.dmg` for distribution.
+   This creates `DevWatch-1.0.dmg` for distribution.
 
 4. **Install manually:**
    ```bash
-   cp -r build/Build/Products/Release/PortWatch.app /Applications/
+   cp -r build/Build/Products/Release/DevWatch.app /Applications/
    ```
 
-## Running PortWatch
+## Running DevWatch
 
 ### First Run
 
-1. Open **Applications** and double-click **PortWatch**
+1. Open **Applications** and double-click **DevWatch**
 2. macOS may show a security warning - click **Open**
 3. Approve permissions if prompted
-4. PortWatch will start and appear in your menu bar
+4. DevWatch will start and appear in your menu bar
 
 ### Menu Bar
 
@@ -64,7 +64,7 @@
 
 ### Permissions
 
-PortWatch requires permission to run `lsof` commands. On first run:
+DevWatch requires permission to run `lsof` commands. On first run:
 
 1. macOS may prompt for permission
 2. Click **Allow** when prompted
@@ -81,19 +81,19 @@ PortWatch requires permission to run `lsof` commands. On first run:
 
 ## Troubleshooting
 
-### "PortWatch cannot be opened" Error
+### "DevWatch cannot be opened" Error
 
 This usually means macOS is blocking the app. To fix:
 
 1. Open **System Preferences** → **Security & Privacy**
 2. Click **General** tab
-3. Find the message about PortWatch
+3. Find the message about DevWatch
 4. Click **Open Anyway**
-5. Try running PortWatch again
+5. Try running DevWatch again
 
 ### Missing Terminal Permissions
 
-PortWatch uses `lsof` which requires permissions:
+DevWatch uses `lsof` which requires permissions:
 
 ```bash
 # Grant permissions (may need admin password)
@@ -121,7 +121,7 @@ To create a signed and notarized DMG for release:
    ```bash
    codesign -s "Developer ID Application" \
      --options runtime \
-     -v build/Build/Products/Release/PortWatch.app
+     -v build/Build/Products/Release/DevWatch.app
    ```
 
 3. Create the DMG:
@@ -131,7 +131,7 @@ To create a signed and notarized DMG for release:
 
 4. Notarize (requires Apple Developer account):
    ```bash
-   xcrun altool --notarize-app -f PortWatch-1.0.dmg \
+   xcrun altool --notarize-app -f DevWatch-1.0.dmg \
      -t osx \
      -u your-email@example.com \
      -p your-app-password
@@ -149,7 +149,7 @@ To create a signed and notarized DMG for release:
 Simply delete the app:
 
 ```bash
-rm -rf /Applications/PortWatch.app
+rm -rf /Applications/DevWatch.app
 ```
 
 Or drag it to Trash from Applications folder.
@@ -157,7 +157,7 @@ Or drag it to Trash from Applications folder.
 ## Support
 
 For issues or questions:
-- Check the [GitHub Issues](https://github.com/yourusername/port-watch/issues)
+- Check the [GitHub Issues](https://github.com/yourusername/dev-watch/issues)
 - Review the [README](README.md)
 - Check the [FAQ](#faq-section)
 
@@ -165,19 +165,19 @@ For issues or questions:
 
 ### Launch on Startup
 
-To make PortWatch launch automatically when you log in:
+To make DevWatch launch automatically when you log in:
 
 1. Open **System Preferences** → **General** → **Login Items**
 2. Click the **+** button
-3. Select **PortWatch** from Applications
+3. Select **DevWatch** from Applications
 4. Close preferences
 
 ### Command Line Usage
 
-You can also run PortWatch from the terminal:
+You can also run DevWatch from the terminal:
 
 ```bash
-/Applications/PortWatch.app/Contents/MacOS/PortWatch
+/Applications/DevWatch.app/Contents/MacOS/DevWatch
 ```
 
 ## Development

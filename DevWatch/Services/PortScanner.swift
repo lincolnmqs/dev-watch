@@ -26,7 +26,8 @@ final class PortScanner {
         let errorPipe = Pipe()
 
         process.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
-        process.arguments = ["-i", "-P", "-n"]
+        // Query only TCP listening sockets. This reduces process scanning cost significantly.
+        process.arguments = ["-iTCP", "-sTCP:LISTEN", "-P", "-n"]
         process.standardOutput = outputPipe
         process.standardError = errorPipe
 
@@ -114,7 +115,8 @@ final class PortScanner {
             projectName: metadata.projectName,
             projectDirectory: metadata.projectDirectory,
             detectedName: metadata.detectedName,
-            alias: aliasStore.alias(for: port)
+            alias: aliasStore.alias(for: port),
+            dockerContainer: nil
         )
     }
 
@@ -123,23 +125,12 @@ final class PortScanner {
         return normalizedHost == "*" || normalizedHost == "127.0.0.1" || normalizedHost == "::1" || normalizedHost == "localhost"
     }
 
-    private func processStartTime(pid: Int) -> Date? {
-        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, Int32(pid)]
-        var info = kinfo_proc()
-        var size = MemoryLayout<kinfo_proc>.stride
-        guard sysctl(&mib, 4, &info, &size, nil, 0) == 0, size > 0 else { return nil }
-        let tv = info.kp_proc.p_starttime
-        return Date(timeIntervalSince1970: TimeInterval(tv.tv_sec) + TimeInterval(tv.tv_usec) / 1_000_000)
-    }
-
     private func metadata(for pid: Int, processName: String, port: Int) -> CachedProcessMetadata {
-        let startTime = processStartTime(pid: pid)
-
-        if let cached = processCache[pid],
-           cached.startTime == startTime {
+        if let cached = processCache[pid] {
             return cached
         }
 
+        let startTime = ProcessResolver.startTime(for: pid)
         let executablePath = ProcessResolver.executablePath(for: pid)
         let workingDirectory = ProcessResolver.workingDirectory(for: pid)
         let commandLine = ProcessResolver.commandLine(for: pid) ?? []

@@ -13,11 +13,13 @@ struct SettingsView: View {
 
             generalSection
 
+            buildsSection
+
             Spacer()
 
             footer
         }
-        .frame(width: 340, height: 220)
+        .frame(width: 340, height: 330)
         .background(Color(nsColor: NSColor(calibratedWhite: 0.12, alpha: 1.0)))
     }
 
@@ -53,12 +55,62 @@ struct SettingsView: View {
             settingRow(
                 icon: "power",
                 title: "Launch at Login",
-                description: "Start PortWatch automatically when you log in."
+                description: "Start DevWatch automatically when you log in."
             ) {
                 Toggle("", isOn: $settings.launchAtLogin)
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .controlSize(.small)
+            }
+
+            settingRow(
+                icon: "timer",
+                title: "Scan interval",
+                description: "Lower interval is more responsive; higher interval saves CPU."
+            ) {
+                HStack(spacing: 6) {
+                    Slider(value: $settings.scanInterval, in: 5...120, step: 1)
+                        .controlSize(.small)
+                    Text("\(Int(settings.scanInterval))s")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .frame(width: 38)
+                }
+                .frame(maxWidth: 180)
+            }
+        }
+    }
+
+    private var buildsSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Builds")
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.38))
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+
+            settingRow(
+                icon: "bell.badge",
+                title: "Notify when builds finish",
+                description: "Get a notification when a build succeeds, fails or is cancelled."
+            ) {
+                Toggle("", isOn: $settings.notifyBuildFinished)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+            }
+
+            settingRow(
+                icon: "chart.bar.fill",
+                title: "Gradle task progress",
+                description: GradleProgressReporter.isInstalled
+                    ? "Init script installed: Gradle builds report real progress."
+                    : "Not installed: Gradle builds show elapsed time and estimates only."
+            ) {
+                Image(systemName: GradleProgressReporter.isInstalled ? "checkmark.circle.fill" : "minus.circle")
+                    .font(.system(size: 13))
+                    .foregroundStyle(GradleProgressReporter.isInstalled ? Color.green : Color.white.opacity(0.3))
             }
         }
     }

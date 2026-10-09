@@ -6,7 +6,7 @@ final class AliasStore: ObservableObject {
 
     @Published private(set) var aliases: [Int: String] = [:]
 
-    private let key = "portwatch.port.aliases"
+    private let key = "devwatch.port.aliases"
 
     init() {
         load()

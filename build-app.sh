@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# PortWatch Build Script
+# DevWatch Build Script
 # Compiles the macOS application for both Intel and Apple Silicon
 
 set -e
 
-echo "🔨 Building PortWatch..."
+echo "🔨 Building DevWatch..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -19,8 +19,8 @@ PROJECT_DIR="$SCRIPT_DIR"
 
 # Build configuration
 BUILD_DIR="$PROJECT_DIR/build"
-SCHEME="PortWatch"
-PROJECT="$PROJECT_DIR/PortWatch.xcodeproj"
+SCHEME="DevWatch"
+PROJECT="$PROJECT_DIR/DevWatch.xcodeproj"
 
 # Create build directory if it doesn't exist
 mkdir -p "$BUILD_DIR"
@@ -47,7 +47,7 @@ xcodebuild \
     -arch x86_64
 
 # Check if build was successful
-APP_PATH="$BUILD_DIR/Build/Products/Release/PortWatch.app"
+APP_PATH="$BUILD_DIR/Build/Products/Release/DevWatch.app"
 if [ -d "$APP_PATH" ]; then
     echo -e "${GREEN}✅ Build successful!${NC}"
     echo -e "${GREEN}📦 App location: $APP_PATH${NC}"

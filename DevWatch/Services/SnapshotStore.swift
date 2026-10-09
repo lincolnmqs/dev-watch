@@ -90,7 +90,7 @@ final class SnapshotStore {
             create: true
         )
         let directory = appSupport
-            .appendingPathComponent("PortWatch", isDirectory: true)
+            .appendingPathComponent("DevWatch", isDirectory: true)
             .appendingPathComponent("Snapshots", isDirectory: true)
 
         if !fileManager.fileExists(atPath: directory.path) {

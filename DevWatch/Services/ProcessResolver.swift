@@ -2,6 +2,15 @@ import Darwin
 import Foundation
 
 struct ProcessResolver {
+    static func startTime(for pid: Int) -> Date? {
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, Int32(pid)]
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        guard sysctl(&mib, 4, &info, &size, nil, 0) == 0, size > 0 else { return nil }
+        let tv = info.kp_proc.p_starttime
+        return Date(timeIntervalSince1970: TimeInterval(tv.tv_sec) + TimeInterval(tv.tv_usec) / 1_000_000)
+    }
+
     static func executablePath(for pid: Int) -> String? {
         var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN * 4))
         guard proc_pidpath(Int32(pid), &buffer, UInt32(buffer.count)) > 0 else { return nil }

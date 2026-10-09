@@ -6,7 +6,7 @@ import SwiftUI
 final class MenuBarController: ObservableObject {
     private static var activeStatusItem: NSStatusItem?
 
-    let viewModel: PortWatchViewModel
+    let viewModel: DevWatchViewModel
     private var statusItem: NSStatusItem!
     private var panel: MenuBarPanel?
     private var settingsPanel: NSPanel?
@@ -16,7 +16,7 @@ final class MenuBarController: ObservableObject {
     private var globalMonitor: Any?
 
     init() {
-        self.viewModel = PortWatchViewModel(scanner: PortScanner())
+        self.viewModel = DevWatchViewModel(scanner: PortScanner())
 
         if Self.shouldTerminateDuplicateProcess() {
             DispatchQueue.main.async {
@@ -51,16 +51,16 @@ final class MenuBarController: ObservableObject {
         Self.activeStatusItem = statusItem
 
         guard let button = statusItem.button else { return }
-        button.image = NSImage(systemSymbolName: "dot.radiowaves.left.and.right", accessibilityDescription: "PortWatch")
+        button.image = NSImage(systemSymbolName: "dot.radiowaves.left.and.right", accessibilityDescription: "DevWatch")
         button.action = #selector(handleStatusItemClick(_:))
         button.target = self
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
 
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Open PortWatch", action: #selector(openFromMenu), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Open DevWatch", action: #selector(openFromMenu), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ","))
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Quit PortWatch", action: #selector(quitApp), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: "Quit DevWatch", action: #selector(quitApp), keyEquivalent: "q"))
         menu.items.forEach { $0.target = self }
         statusMenu = menu
     }
@@ -75,7 +75,7 @@ final class MenuBarController: ObservableObject {
     }
 
     private func setupPanel() {
-        let contentView = PortWatchPopoverView(viewModel: viewModel, onOpenSettings: { [weak self] in
+        let contentView = DevWatchPopoverView(viewModel: viewModel, onOpenSettings: { [weak self] in
             self?.openSettings()
         })
             .padding(8)
@@ -98,10 +98,42 @@ final class MenuBarController: ObservableObject {
                 self?.updateBadge(count: services.count)
             }
             .store(in: &cancellables)
+
+        viewModel.$builds
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.updateBuildIndicator()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// While a build runs, the status item turns into a hammer with the build percentage.
+    private func updateBuildIndicator() {
+        guard let button = statusItem.button else { return }
+
+        guard let estimate = viewModel.menuBarBuildEstimate else {
+            button.image = NSImage(systemSymbolName: "dot.radiowaves.left.and.right", accessibilityDescription: "DevWatch")
+            button.attributedTitle = NSAttributedString(string: "")
+            button.imagePosition = .imageOnly
+            return
+        }
+
+        button.image = NSImage(systemSymbolName: "hammer.fill", accessibilityDescription: "Build running")
+        if let progress = estimate.progress {
+            let percent = Int((progress * 100).rounded(.down))
+            button.attributedTitle = NSAttributedString(
+                string: " \(estimate.isEstimated ? "~" : "")\(percent)%",
+                attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)]
+            )
+            button.imagePosition = .imageLeading
+        } else {
+            button.attributedTitle = NSAttributedString(string: "")
+            button.imagePosition = .imageOnly
+        }
     }
 
     private func updateBadge(count: Int) {
-        guard let button = statusItem.button else { return }
+        guard let button = statusItem.button, viewModel.runningBuilds.isEmpty else { return }
         button.title = ""
         button.imagePosition = .imageOnly
     }
@@ -133,7 +165,7 @@ final class MenuBarController: ObservableObject {
         }
 
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 340, height: 220),
+            contentRect: NSRect(x: 0, y: 0, width: 340, height: 330),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false

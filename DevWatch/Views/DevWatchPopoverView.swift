@@ -1,7 +1,7 @@
 import SwiftUI
 
-struct PortWatchPopoverView: View {
-    @ObservedObject var viewModel: PortWatchViewModel
+struct DevWatchPopoverView: View {
+    @ObservedObject var viewModel: DevWatchViewModel
     let onOpenSettings: () -> Void
     @State private var appeared = false
 
@@ -25,6 +25,15 @@ struct PortWatchPopoverView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
 
+            if !viewModel.builds.isEmpty {
+                buildList
+                    .transition(.move(edge: .top).combined(with: .opacity))
+
+                Rectangle()
+                    .fill(Color.white.opacity(0.08))
+                    .frame(height: 1)
+            }
+
             Group {
                 if let errorMessage = viewModel.errorMessage, viewModel.services.isEmpty {
                     EmptyStateView(
@@ -34,8 +43,8 @@ struct PortWatchPopoverView: View {
                     )
                 } else if viewModel.visibleServices.isEmpty, !viewModel.isRefreshing {
                     EmptyStateView(
-                        title: "No Project Services Running",
-                        message: "PortWatch only shows services tied to real project folders in your home directory."
+                        title: "No Local Services Running",
+                        message: "DevWatch shows services tied to real project folders plus Docker containers with published local ports."
                     )
                 } else if viewModel.projectSections.isEmpty, !viewModel.isRefreshing {
                     EmptyStateView(
@@ -58,6 +67,7 @@ struct PortWatchPopoverView: View {
         }
         .frame(width: 380, height: 460)
         .animation(.easeInOut(duration: 0.25), value: viewModel.recentlyStopped == nil)
+        .animation(.easeInOut(duration: 0.25), value: viewModel.builds.map(\.id))
         .onAppear {
             withAnimation(.easeOut(duration: 0.25)) {
                 appeared = true
@@ -71,7 +81,7 @@ struct PortWatchPopoverView: View {
     private var header: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 3) {
-                Text("PortWatch")
+                Text("DevWatch")
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
 
@@ -83,8 +93,8 @@ struct PortWatchPopoverView: View {
                     }
                     Text(
                         viewModel.visibleServices.isEmpty
-                            ? "no project services"
-                            : "\(viewModel.projectSections.count) project\(viewModel.projectSections.count == 1 ? "" : "s") · \(viewModel.filteredServices.count) service\(viewModel.filteredServices.count == 1 ? "" : "s")"
+                            ? "no local services"
+                            : "\(viewModel.projectSections.count) section\(viewModel.projectSections.count == 1 ? "" : "s") · \(viewModel.filteredServices.count) service\(viewModel.filteredServices.count == 1 ? "" : "s")"
                     )
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.4))
@@ -126,11 +136,48 @@ struct PortWatchPopoverView: View {
         }
     }
 
+    private var buildList: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Builds")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.78))
+                Spacer()
+                if !viewModel.runningBuilds.isEmpty {
+                    Text("\(viewModel.runningBuilds.count) running")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.32))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 0)
+
+            // Keep services visible even with several builds: scroll beyond three rows.
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(viewModel.builds) { job in
+                        BuildRowView(
+                            job: job,
+                            estimate: { viewModel.estimate(for: job, now: $0) },
+                            stopAction: { viewModel.stopBuild(job) },
+                            revealArtifactAction: { viewModel.revealArtifact(job) },
+                            copyArtifactAction: { viewModel.copyArtifactPath(job) },
+                            openFolderAction: { viewModel.openBuildFolder(job) },
+                            dismissAction: { viewModel.dismissBuild(job) }
+                        )
+                    }
+                }
+            }
+            .frame(height: CGFloat(min(viewModel.builds.count, 3)) * 68)
+        }
+    }
+
     private var serviceList: some View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(Array(viewModel.projectSections.enumerated()), id: \.element.id) { sectionIndex, section in
-                    if section.services.count > 1 {
+                    if section.services.count > 1 || section.name == "Docker" {
                         ProjectHeaderView(section: section)
                             .padding(.horizontal, 16)
                             .padding(.top, sectionIndex == 0 ? 6 : 12)
@@ -241,7 +288,7 @@ struct PortWatchPopoverView: View {
 }
 
 private struct ProjectHeaderView: View {
-    let section: PortWatchViewModel.ProjectSection
+    let section: DevWatchViewModel.ProjectSection
 
     var body: some View {
         HStack(alignment: .center) {

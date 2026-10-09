@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10000000000000000000001 /* PortWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* PortWatchApp.swift */; };
+		A10000000000000000000001 /* DevWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* DevWatchApp.swift */; };
 		A10000000000000000000003 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* MenuBarController.swift */; };
 		A10000000000000000000004 /* PortService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* PortService.swift */; };
 		A10000000000000000000005 /* PortScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* PortScanner.swift */; };
-		A10000000000000000000006 /* PortWatchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* PortWatchViewModel.swift */; };
-		A10000000000000000000007 /* PortWatchPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* PortWatchPopoverView.swift */; };
+		A10000000000000000000006 /* DevWatchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* DevWatchViewModel.swift */; };
+		A10000000000000000000007 /* DevWatchPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* DevWatchPopoverView.swift */; };
 		A10000000000000000000008 /* PortRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* PortRowView.swift */; };
 		A10000000000000000000009 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* EmptyStateView.swift */; };
 		A1000000000000000000000A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* Assets.xcassets */; };
@@ -24,16 +24,22 @@
 		A10000000000000000000010 /* SnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* SnapshotStore.swift */; };
 		A10000000000000000000011 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* AppSettings.swift */; };
 		A10000000000000000000012 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* SettingsView.swift */; };
+		A10000000000000000000013 /* BuildJob.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* BuildJob.swift */; };
+		A10000000000000000000014 /* BuildScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* BuildScanner.swift */; };
+		A10000000000000000000015 /* BuildHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* BuildHistoryStore.swift */; };
+		A10000000000000000000016 /* GradleProgressReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* GradleProgressReporter.swift */; };
+		A10000000000000000000017 /* BuildRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* BuildRowView.swift */; };
+		A10000000000000000000018 /* LegacyMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001A /* LegacyMigration.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A20000000000000000000000 /* PortWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PortWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A20000000000000000000001 /* PortWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortWatchApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000000 /* DevWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DevWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000001 /* DevWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevWatchApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
 		A20000000000000000000004 /* PortService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortService.swift; sourceTree = "<group>"; };
 		A20000000000000000000005 /* PortScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortScanner.swift; sourceTree = "<group>"; };
-		A20000000000000000000006 /* PortWatchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortWatchViewModel.swift; sourceTree = "<group>"; };
-		A20000000000000000000007 /* PortWatchPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortWatchPopoverView.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* DevWatchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevWatchViewModel.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* DevWatchPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevWatchPopoverView.swift; sourceTree = "<group>"; };
 		A20000000000000000000008 /* PortRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortRowView.swift; sourceTree = "<group>"; };
 		A20000000000000000000009 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		A2000000000000000000000A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -47,6 +53,12 @@
 		A20000000000000000000012 /* SnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotStore.swift; sourceTree = "<group>"; };
 		A20000000000000000000013 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		A20000000000000000000014 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A20000000000000000000015 /* BuildJob.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildJob.swift; sourceTree = "<group>"; };
+		A20000000000000000000016 /* BuildScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildScanner.swift; sourceTree = "<group>"; };
+		A20000000000000000000017 /* BuildHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildHistoryStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000018 /* GradleProgressReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradleProgressReporter.swift; sourceTree = "<group>"; };
+		A20000000000000000000019 /* BuildRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildRowView.swift; sourceTree = "<group>"; };
+		A2000000000000000000001A /* LegacyMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyMigration.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,13 +75,13 @@
 		A40000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
-				A40000000000000000000002 /* PortWatch */,
+				A40000000000000000000002 /* DevWatch */,
 				A40000000000000000000009 /* Products */,
 				A2000000000000000000000C /* README.md */,
 			);
 			sourceTree = "<group>";
 		};
-		A40000000000000000000002 /* PortWatch */ = {
+		A40000000000000000000002 /* DevWatch */ = {
 			isa = PBXGroup;
 			children = (
 				A40000000000000000000003 /* App */,
@@ -80,13 +92,14 @@
 				A40000000000000000000008 /* Views */,
 				A4000000000000000000000A /* Resources */,
 			);
-			path = PortWatch;
+			path = DevWatch;
 			sourceTree = "<group>";
 		};
 		A40000000000000000000003 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				A20000000000000000000001 /* PortWatchApp.swift */,
+				A20000000000000000000001 /* DevWatchApp.swift */,
+				A2000000000000000000001A /* LegacyMigration.swift */,
 				A2000000000000000000000A /* Info.plist */,
 			);
 			path = App;
@@ -103,6 +116,7 @@
 		A40000000000000000000005 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				A20000000000000000000015 /* BuildJob.swift */,
 				A20000000000000000000004 /* PortService.swift */,
 				A20000000000000000000011 /* SessionSnapshot.swift */,
 			);
@@ -112,6 +126,9 @@
 		A40000000000000000000006 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				A20000000000000000000018 /* GradleProgressReporter.swift */,
+				A20000000000000000000017 /* BuildHistoryStore.swift */,
+				A20000000000000000000016 /* BuildScanner.swift */,
 				A2000000000000000000000D /* AliasStore.swift */,
 				A20000000000000000000013 /* AppSettings.swift */,
 				A20000000000000000000005 /* PortScanner.swift */,
@@ -126,7 +143,7 @@
 		A40000000000000000000007 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				A20000000000000000000006 /* PortWatchViewModel.swift */,
+				A20000000000000000000006 /* DevWatchViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -134,7 +151,8 @@
 		A40000000000000000000008 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				A20000000000000000000007 /* PortWatchPopoverView.swift */,
+				A20000000000000000000019 /* BuildRowView.swift */,
+				A20000000000000000000007 /* DevWatchPopoverView.swift */,
 				A20000000000000000000008 /* PortRowView.swift */,
 				A20000000000000000000009 /* EmptyStateView.swift */,
 				A20000000000000000000014 /* SettingsView.swift */,
@@ -145,7 +163,7 @@
 		A40000000000000000000009 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A20000000000000000000000 /* PortWatch.app */,
+				A20000000000000000000000 /* DevWatch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -161,9 +179,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A50000000000000000000001 /* PortWatch */ = {
+		A50000000000000000000001 /* DevWatch */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A70000000000000000000001 /* Build configuration list for PBXNativeTarget "PortWatch" */;
+			buildConfigurationList = A70000000000000000000001 /* Build configuration list for PBXNativeTarget "DevWatch" */;
 			buildPhases = (
 				A30000000000000000000002 /* Sources */,
 				A30000000000000000000001 /* Frameworks */,
@@ -173,9 +191,9 @@
 			);
 			dependencies = (
 			);
-			name = PortWatch;
-			productName = PortWatch;
-			productReference = A20000000000000000000000 /* PortWatch.app */;
+			name = DevWatch;
+			productName = DevWatch;
+			productReference = A20000000000000000000000 /* DevWatch.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -193,7 +211,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A70000000000000000000002 /* Build configuration list for PBXProject "PortWatch" */;
+			buildConfigurationList = A70000000000000000000002 /* Build configuration list for PBXProject "DevWatch" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -206,7 +224,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A50000000000000000000001 /* PortWatch */,
+				A50000000000000000000001 /* DevWatch */,
 			);
 		};
 /* End PBXProject section */
@@ -227,6 +245,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000018 /* LegacyMigration.swift in Sources */,
+				A10000000000000000000017 /* BuildRowView.swift in Sources */,
+				A10000000000000000000016 /* GradleProgressReporter.swift in Sources */,
+				A10000000000000000000015 /* BuildHistoryStore.swift in Sources */,
+				A10000000000000000000014 /* BuildScanner.swift in Sources */,
+				A10000000000000000000013 /* BuildJob.swift in Sources */,
 				A1000000000000000000000B /* AliasStore.swift in Sources */,
 				A10000000000000000000009 /* EmptyStateView.swift in Sources */,
 				A10000000000000000000003 /* MenuBarController.swift in Sources */,
@@ -237,9 +261,9 @@
 				A1000000000000000000000F /* SessionSnapshot.swift in Sources */,
 				A1000000000000000000000E /* ServiceIdentifier.swift in Sources */,
 				A10000000000000000000010 /* SnapshotStore.swift in Sources */,
-				A10000000000000000000001 /* PortWatchApp.swift in Sources */,
-				A10000000000000000000007 /* PortWatchPopoverView.swift in Sources */,
-				A10000000000000000000006 /* PortWatchViewModel.swift in Sources */,
+				A10000000000000000000001 /* DevWatchApp.swift in Sources */,
+				A10000000000000000000007 /* DevWatchPopoverView.swift in Sources */,
+				A10000000000000000000006 /* DevWatchViewModel.swift in Sources */,
 				A10000000000000000000008 /* PortRowView.swift in Sources */,
 				A10000000000000000000011 /* AppSettings.swift in Sources */,
 				A10000000000000000000012 /* SettingsView.swift in Sources */,
@@ -260,13 +284,13 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = PortWatch/App/Info.plist;
+				INFOPLIST_FILE = DevWatch/App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.lincolnmarques.PortWatch;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lincolnmarques.DevWatch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -285,13 +309,13 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = PortWatch/App/Info.plist;
+				INFOPLIST_FILE = DevWatch/App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.lincolnmarques.PortWatch;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lincolnmarques.DevWatch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -387,7 +411,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A70000000000000000000001 /* Build configuration list for PBXNativeTarget "PortWatch" */ = {
+		A70000000000000000000001 /* Build configuration list for PBXNativeTarget "DevWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A80000000000000000000001 /* Debug */,
@@ -396,7 +420,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A70000000000000000000002 /* Build configuration list for PBXProject "PortWatch" */ = {
+		A70000000000000000000002 /* Build configuration list for PBXProject "DevWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A80000000000000000000003 /* Debug */,

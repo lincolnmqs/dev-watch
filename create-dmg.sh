@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# PortWatch DMG Creation Script
+# DevWatch DMG Creation Script
 # Creates a distribution DMG file with the compiled app
 
 set -e
 
-echo "📦 Creating PortWatch DMG..."
+echo "📦 Creating DevWatch DMG..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -19,11 +19,11 @@ PROJECT_DIR="$SCRIPT_DIR"
 
 # Configuration
 BUILD_DIR="$PROJECT_DIR/build"
-APP_PATH="$BUILD_DIR/Build/Products/Release/PortWatch.app"
-DMG_NAME="PortWatch-1.0.dmg"
+APP_PATH="$BUILD_DIR/Build/Products/Release/DevWatch.app"
+DMG_NAME="DevWatch-1.0.dmg"
 DMG_PATH="$PROJECT_DIR/$DMG_NAME"
-TEMP_DMG_PATH="/tmp/PortWatch-temp.dmg"
-MOUNT_POINT="/Volumes/PortWatch"
+TEMP_DMG_PATH="/tmp/DevWatch-temp.dmg"
+MOUNT_POINT="/Volumes/DevWatch"
 
 # Check if app exists
 if [ ! -d "$APP_PATH" ]; then
@@ -56,7 +56,7 @@ echo -e "${YELLOW}📏 DMG size: ${DMG_SIZE_MB}MB${NC}"
 # Create temporary DMG
 echo -e "${YELLOW}🔨 Creating temporary DMG...${NC}"
 hdiutil create \
-    -volname "PortWatch" \
+    -volname "DevWatch" \
     -srcfolder "$APP_PATH" \
     -ov \
     -format UDZO \

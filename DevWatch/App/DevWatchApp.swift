@@ -1,8 +1,12 @@
 import SwiftUI
 
 @main
-struct PortWatchApp: App {
+struct DevWatchApp: App {
     @StateObject private var menuBarController = MenuBarController()
+
+    init() {
+        LegacyMigration.runIfNeeded()
+    }
 
     var body: some Scene {
         Settings {

@@ -5,7 +5,7 @@ import SwiftUI
 import UserNotifications
 
 @MainActor
-final class PortWatchViewModel: ObservableObject {
+final class DevWatchViewModel: ObservableObject {
     private struct ProjectGroupKey: Hashable {
         let name: String
         let directory: String?
@@ -33,26 +33,49 @@ final class PortWatchViewModel: ObservableObject {
     @Published private(set) var newServiceIDs: Set<String> = []
     @Published private(set) var recentlyStopped: PortService?
     @Published private(set) var recentSnapshots: [SessionSnapshot] = []
+    @Published private(set) var builds: [BuildJob] = []
 
     private let scanner: PortScanner
     private let aliasStore: AliasStore
     private let snapshotStore: SnapshotStore
+    private let buildScanner = BuildScanner()
+    private let buildHistory = BuildHistoryStore()
+    private let settings = AppSettings.shared
+    private var cancellables = Set<AnyCancellable>()
     private var refreshTimer: Timer?
+    private var buildTimer: Timer?
+    private var isScanningBuilds = false
+    private var hasScannedBuilds = false
+    private var stoppedBuildIDs: Set<String> = []
     private var powerStateObserver: NSObjectProtocol?
     private var infoPanel: NSPanel?
     private var isFirstLoad = true
     private var isPanelVisible = false
 
     private var refreshInterval: TimeInterval {
+        // Enable user control, but keep safe minimum/maximum bounds for battery/idle usage.
+        let configured = min(max(settings.scanInterval, 5), 120)
+
         if isPanelVisible {
-            return 5
+            return min(configured, 30)
         }
 
         if ProcessInfo.processInfo.isLowPowerModeEnabled {
-            return 45
+            return max(configured, 60)
         }
 
-        return 20
+        return max(configured, 30)
+    }
+
+    var runningBuilds: [BuildJob] {
+        builds.filter { $0.state == .running }
+    }
+
+    /// Progress shown next to the menu bar icon: the least advanced running build, so it never jumps ahead.
+    var menuBarBuildEstimate: BuildEstimate? {
+        let estimates: [BuildEstimate] = runningBuilds.map { estimate(for: $0) }
+        let withProgress = estimates.filter { $0.progress != nil }
+        return withProgress.min { ($0.progress ?? 0) < ($1.progress ?? 0) } ?? estimates.first
     }
 
     var visibleServices: [PortService] {
@@ -111,14 +134,23 @@ final class PortWatchViewModel: ObservableObject {
         self.aliasStore = aliasStore
         self.snapshotStore = snapshotStore
         self.recentSnapshots = snapshotStore.loadRecent()
+
+        settings.$scanInterval
+            .sink { [weak self] _ in
+                self?.startAutoRefresh()
+            }
+            .store(in: &cancellables)
+
         observePowerState()
         requestNotificationPermission()
         startAutoRefresh()
         refresh()
+        refreshBuilds()
     }
 
     deinit {
         refreshTimer?.invalidate()
+        buildTimer?.invalidate()
         if let powerStateObserver {
             NotificationCenter.default.removeObserver(powerStateObserver)
         }
@@ -153,6 +185,153 @@ final class PortWatchViewModel: ObservableObject {
 
         if visible {
             refresh()
+            refreshBuilds()
+        }
+    }
+
+    // MARK: - Builds
+
+    func estimate(for job: BuildJob, now: Date = Date()) -> BuildEstimate {
+        job.estimate(typicalDuration: buildHistory.typicalDuration(for: job), now: now)
+    }
+
+    func refreshBuilds() {
+        guard !isScanningBuilds else { return }
+        isScanningBuilds = true
+
+        Task.detached(priority: .utility) { [buildScanner] in
+            let scanned = buildScanner.scan()
+            await MainActor.run {
+                self.applyBuilds(scanned)
+                self.isScanningBuilds = false
+                self.scheduleBuildScan()
+            }
+        }
+    }
+
+    func stopBuild(_ job: BuildJob) {
+        guard let pid = job.stopPID else { return }
+        // SIGTERM rather than SIGINT: shells start background jobs with SIGINT ignored. Gradle's client
+        // still cancels the daemon build from its shutdown hook; xcodebuild and Flutter exit cleanly.
+        if kill(pid_t(pid), SIGTERM) == 0 {
+            stoppedBuildIDs.insert(job.id)
+            refreshBuilds()
+        } else {
+            errorMessage = "Unable to stop build (PID \(pid))."
+        }
+    }
+
+    func revealArtifact(_ job: BuildJob) {
+        guard let path = job.artifactPath else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+    }
+
+    func copyArtifactPath(_ job: BuildJob) {
+        guard let path = job.artifactPath else { return }
+        copyToPasteboard(path)
+    }
+
+    func openBuildFolder(_ job: BuildJob) {
+        NSWorkspace.shared.open(URL(fileURLWithPath: job.projectDirectory))
+    }
+
+    func dismissBuild(_ job: BuildJob) {
+        builds.removeAll { $0.id == job.id && $0.state.isFinished }
+    }
+
+    private func applyBuilds(_ scanned: [BuildJob]) {
+        let now = Date()
+        let previousByID = Dictionary(builds.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let scannedIDs = Set(scanned.map(\.id))
+        var next: [BuildJob] = []
+
+        for var job in scanned {
+            if job.state.isFinished, let previous = previousByID[job.id], previous.state == .running {
+                // Once the Gradle client exits, the scan only knows the first-task time; keep the real start.
+                job.startedAt = min(job.startedAt, previous.startedAt)
+            }
+
+            if job.state == .running {
+                next.append(job)
+            } else if let previous = previousByID[job.id], previous.state.isFinished {
+                next.append(previous)
+            } else if hasScannedBuilds {
+                next.append(completeBuild(job))
+            } else {
+                // Finished before DevWatch launched: show it, but don't notify or skew history.
+                next.append(job)
+            }
+        }
+
+        for previous in builds where !scannedIDs.contains(previous.id) {
+            if previous.state == .running {
+                var finished = previous
+                finished.state = .finished
+                finished.finishedAt = now
+                next.append(completeBuild(finished))
+            } else if let finishedAt = previous.finishedAt, now.timeIntervalSince(finishedAt) < BuildScanner.finishedLinger {
+                next.append(previous)
+            }
+        }
+
+        builds = next.sorted {
+            if ($0.state == .running) != ($1.state == .running) { return $0.state == .running }
+            return $0.startedAt > $1.startedAt
+        }
+        hasScannedBuilds = true
+    }
+
+    private func completeBuild(_ job: BuildJob) -> BuildJob {
+        var finished = job
+        finished.stopPID = nil
+        if finished.finishedAt == nil { finished.finishedAt = Date() }
+        if stoppedBuildIDs.remove(job.id) != nil, finished.state == .finished || finished.state == .failed {
+            finished.state = .cancelled
+        }
+
+        if finished.state == .succeeded || finished.state == .finished {
+            finished.artifactPath = BuildScanner.findArtifact(for: finished)
+            buildHistory.record(finished)
+        }
+
+        if settings.notifyBuildFinished {
+            notifyBuildFinished(finished)
+        }
+        return finished
+    }
+
+    private func notifyBuildFinished(_ job: BuildJob) {
+        let duration = DurationFormatter.short(job.elapsed())
+        let title: String
+        switch job.state {
+        case .succeeded, .finished: title = "\(job.platform.rawValue) build finished"
+        case .failed: title = "\(job.platform.rawValue) build failed"
+        case .cancelled: title = "\(job.platform.rawValue) build cancelled"
+        case .running: return
+        }
+
+        var body = "\(job.projectName) · \(job.displayTask) · \(duration)"
+        if let artifact = job.artifactPath {
+            body += "\n\((artifact as NSString).lastPathComponent) is ready"
+        }
+        sendNotification(title: title, body: body, interruptionLevel: .active)
+    }
+
+    private func scheduleBuildScan() {
+        let interval: TimeInterval
+        if !runningBuilds.isEmpty {
+            interval = isPanelVisible ? 1 : 2
+        } else if ProcessInfo.processInfo.isLowPowerModeEnabled {
+            interval = 15
+        } else {
+            interval = isPanelVisible ? 3 : 6
+        }
+
+        buildTimer?.invalidate()
+        buildTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshBuilds()
+            }
         }
     }
 
@@ -164,7 +343,7 @@ final class PortWatchViewModel: ObservableObject {
         let disappearedIDs = previousIDs.subtracting(currentIDs)
 
         if !isFirstLoad {
-            let previousByPort = Dictionary(uniqueKeysWithValues: services.map { ($0.port, $0) })
+            let previousByPort = Dictionary(services.map { ($0.port, $0) }, uniquingKeysWith: { first, _ in first })
 
             for id in appearedIDs {
                 if let s = newServices.first(where: { $0.id == id }) {
@@ -245,7 +424,7 @@ final class PortWatchViewModel: ObservableObject {
 
     func showCommand(_ service: PortService) {
         guard let command = service.commandSummary else {
-            errorMessage = "PortWatch could not read the launch command for PID \(service.pid)."
+            errorMessage = "DevWatch could not read the launch command for PID \(service.pid)."
             return
         }
 
@@ -403,11 +582,11 @@ final class PortWatchViewModel: ObservableObject {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { _, _ in }
     }
 
-    private func sendNotification(title: String, body: String) {
+    private func sendNotification(title: String, body: String, interruptionLevel: UNNotificationInterruptionLevel = .passive) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        content.interruptionLevel = .passive
+        content.interruptionLevel = interruptionLevel
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
     }

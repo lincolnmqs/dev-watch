@@ -1,6 +1,13 @@
 import Foundation
 
 struct PortService: Identifiable, Hashable {
+    struct DockerContainer: Hashable {
+        let id: String
+        let name: String
+        let image: String
+        let status: String?
+    }
+
     let processName: String
     let pid: Int
     let protocolName: String
@@ -15,6 +22,7 @@ struct PortService: Identifiable, Hashable {
     let projectDirectory: String?
     let detectedName: String?
     let alias: String?
+    let dockerContainer: DockerContainer?
 
     var id: String {
         "\(pid)-\(protocolName)-\(port)-\(processName)"
@@ -22,11 +30,17 @@ struct PortService: Identifiable, Hashable {
 
     var primaryName: String {
         if let alias, !alias.isEmpty { return alias }
+        if let dockerContainer { return dockerContainer.name }
         if let projectName, !projectName.isEmpty { return projectName }
         return processName
     }
 
     var secondaryName: String {
+        if let dockerContainer {
+            let imageName = dockerContainer.image.trimmingCharacters(in: .whitespacesAndNewlines)
+            return imageName.isEmpty ? "Docker container" : imageName
+        }
+
         let normalizedProcess = processName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let normalizedRuntime = detectedName?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let normalizedPrimary = primaryName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -39,7 +53,8 @@ struct PortService: Identifiable, Hashable {
     }
 
     var projectDisplayName: String {
-        projectName ?? "Ungrouped"
+        if dockerContainer != nil { return "Docker" }
+        return projectName ?? "Ungrouped"
     }
 
     var commandSummary: String? {
@@ -52,7 +67,8 @@ struct PortService: Identifiable, Hashable {
     }
 
     var runtimeBadgeText: String? {
-        detectedName
+        if dockerContainer != nil { return "Docker" }
+        return detectedName
     }
 
     var runtimeSymbolName: String {
